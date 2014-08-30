@@ -4033,10 +4033,11 @@ def test_object_copy_to_itself():
     bucket = get_new_bucket()
     key = bucket.new_key('foo123bar')
     key.set_contents_from_string('foo')
-    e = assert_raises(boto.exception.S3ResponseError, key.copy, bucket, 'foo123bar')
-    eq(e.status, 400)
-    eq(e.reason, 'Bad Request')
-    eq(e.error_code, 'InvalidRequest')
+    key.copy(bucket, 'foo123bar')
+
+    key2 = bucket.get_key('foo123bar')
+    got = key2.get_contents_as_string()
+    eq(got, 'foo')
 
 @attr(resource='object')
 @attr(method='put')
