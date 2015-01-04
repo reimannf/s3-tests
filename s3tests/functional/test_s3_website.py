@@ -43,6 +43,7 @@ ERRORDOC_TEMPLATE = '<html><h1>ErrorDoc</h1><body>{random}</body></html>'
 CAN_WEBSITE = None
 
 def check_can_test_website():
+    return
     global CAN_WEBSITE
     # This is a bit expensive, so we cache this
     if CAN_WEBSITE is None:

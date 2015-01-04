@@ -222,6 +222,7 @@ def test_object_create_bad_md5_empty():
     eq(e.error_code, 'InvalidDigest')
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='object')
 @attr(method='put')
@@ -251,6 +252,7 @@ def test_object_create_bad_md5_none():
 
 # strangely, amazon doesn't report an error with a non-expect 100 also, our
 # error comes back as html, and not xml as I normally expect
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='object')
 @attr(method='put')
@@ -265,6 +267,7 @@ def test_object_create_bad_expect_mismatch():
 
 # this is a really long test, and I don't know if it's valid...
 # again, accepts this with no troubles
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='object')
 @attr(method='put')
@@ -295,6 +298,7 @@ def test_object_create_bad_expect_none():
 @attr(assertion='garbage, but S3 succeeds!')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('fails_on_s3proxy')
 @attr('fails_strict_rfc2616')
 def test_object_create_bad_expect_unreadable():
     key = _setup_bad_object({'Expect': '\x07'})
@@ -308,6 +312,7 @@ def test_object_create_bad_expect_unreadable():
 @attr(assertion='fails 400')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('fails_on_s3proxy')
 def test_object_create_bad_contentlength_empty():
     key = _setup_bad_object({'Content-Length': ''})
 
@@ -347,6 +352,7 @@ def test_object_create_bad_contentlength_none():
     eq(e.error_code,'MissingContentLength')
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='object')
 @attr(method='put')
@@ -428,6 +434,7 @@ def test_object_create_bad_contenttype_none():
 @attr(assertion='fails 403')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('fails_on_s3proxy')
 @attr('fails_strict_rfc2616')
 def test_object_create_bad_contenttype_unreadable():
     key = _setup_bad_object({'Content-Type': '\x08'})
@@ -446,6 +453,7 @@ def test_object_create_bad_contenttype_unreadable():
 @attr(assertion='fails 403')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('fails_on_s3proxy')
 @attr('fails_strict_rfc2616')
 def test_object_create_bad_authorization_unreadable():
     key = _setup_bad_object({'Authorization': '\x07'})
@@ -476,6 +484,7 @@ def test_object_create_bad_authorization_empty():
 @attr(operation='create w/date and x-amz-date')
 @attr(assertion='succeeds')
 @nose.with_setup(teardown=_clear_custom_headers)
+@attr('fails_on_s3proxy')
 def test_object_create_date_and_amz_date():
     date = formatdate(usegmt=True)
     key = _setup_bad_object({'Date': date, 'X-Amz-Date': date})
@@ -520,6 +529,7 @@ def test_bucket_create_contentlength_none():
     get_new_bucket()
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='bucket')
 @attr(method='acls')
@@ -552,6 +562,7 @@ def test_bucket_put_bad_canned_acl():
 
 # strangely, amazon doesn't report an error with a non-expect 100 also, our
 # error comes back as html, and not xml as I normally expect
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='bucket')
 @attr(method='put')
@@ -566,6 +577,7 @@ def test_bucket_create_bad_expect_mismatch():
 
 # this is a really long test, and I don't know if it's valid...
 # again, accepts this with no troubles
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='bucket')
 @attr(method='put')
@@ -577,6 +589,7 @@ def test_bucket_create_bad_expect_empty():
     bucket = get_new_bucket()
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='bucket')
 @attr(method='put')
@@ -612,6 +625,7 @@ def _create_new_connection():
 @attr(assertion='fails 400')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('fails_on_s3proxy')
 def test_bucket_create_bad_contentlength_empty():
     conn = _create_new_connection()
     _add_custom_headers({'Content-Length': ''})
@@ -645,6 +659,7 @@ def test_bucket_create_bad_contentlength_none():
     bucket = get_new_bucket()
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_common')
 @attr(resource='bucket')
 @attr(method='put')
@@ -669,6 +684,7 @@ def test_bucket_create_bad_contentlength_unreadable():
 @attr(assertion='fails 403')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('fails_on_s3proxy')
 @attr('fails_strict_rfc2616')
 def test_bucket_create_bad_authorization_unreadable():
     _add_custom_headers({'Authorization': '\x07'})
@@ -784,6 +800,7 @@ def test_object_create_bad_ua_empty_aws2():
     key.set_contents_from_string('bar')
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_aws2')
 @attr(resource='object')
 @attr(method='put')
@@ -824,6 +841,7 @@ def test_object_create_bad_date_invalid_aws2():
     eq(e.error_code, 'AccessDenied')
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_aws2')
 @attr(resource='object')
 @attr(method='put')
@@ -844,6 +862,7 @@ def test_object_create_bad_date_empty_aws2():
 @attr(method='put')
 @attr(operation='create w/non-graphic date')
 @attr(assertion='fails 403')
+@attr('fails_on_s3proxy')
 @attr('fails_strict_rfc2616')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_unreadable_aws2():
@@ -958,6 +977,7 @@ def test_bucket_create_bad_ua_empty_aws2():
     bucket = get_new_bucket()
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_aws2')
 @attr(resource='bucket')
 @attr(method='put')
@@ -998,6 +1018,7 @@ def test_bucket_create_bad_date_invalid_aws2():
     eq(e.error_code, 'AccessDenied')
 
 
+@attr('fails_on_s3proxy')
 @tag('auth_aws2')
 @attr(resource='bucket')
 @attr(method='put')
@@ -1018,6 +1039,7 @@ def test_bucket_create_bad_date_empty_aws2():
 @attr(method='put')
 @attr(operation='create w/non-graphic date')
 @attr(assertion='fails 403')
+@attr('fails_on_s3proxy')
 @attr('fails_strict_rfc2616')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_unreadable_aws2():

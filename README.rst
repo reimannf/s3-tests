@@ -86,6 +86,10 @@ based on their attributes::
 
 	S3TEST_CONF=aws.conf ./virtualenv/bin/nosetests -a '!fails_on_aws'
 
+S3Proxy instructions:
+
+	S3TEST_CONF=s3proxy.conf ./virtualenv/bin/nosetests -a '!fails_on_s3proxy,!bucket-policy,!cors,!encryption,!fails_strict_rfc2616,!lifecycle,!policy,!s3website,!tagging,!versioning'
+
 
 TODO
 ====
