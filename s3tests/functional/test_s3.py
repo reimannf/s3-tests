@@ -2615,6 +2615,58 @@ def test_get_object_ifunmodifiedsince_failed():
     eq(got, 'bar')
 
 @attr(resource='object')
+@attr(method='copy')
+@attr(operation='copy w/ x-amz-copy-source-if-match: the latest ETag')
+@attr(assertion='succeeds')
+def test_copy_object_ifmatch_good():
+    bucket = get_new_bucket()
+    key = bucket.new_key('foo')
+    key.set_contents_from_string('bar')
+
+    new_key = bucket.copy_key('bar', bucket.name, 'foo', headers={'x-amz-copy-source-if-match': key.etag})
+    got = new_key.get_contents_as_string()
+    eq(got, 'bar')
+
+@attr(resource='object')
+@attr(method='copy')
+@attr(operation='copy w/ x-amz-copy-source-if-match: bogus ETag')
+@attr(assertion='fails 412')
+def test_copy_object_ifmatch_failed():
+    bucket = get_new_bucket()
+    key = bucket.new_key('foo')
+    key.set_contents_from_string('bar')
+
+    e = assert_raises(boto.exception.S3ResponseError, bucket.copy_key, 'bar', bucket.name, 'foo', headers={'x-amz-copy-source-if-match': 'ABCORZ'})
+    eq(e.status, 412)
+    eq(e.reason, 'Precondition Failed')
+
+@attr(resource='object')
+@attr(method='copy')
+@attr(operation='copy w/ x-amz-copy-source-if-none-match: the latest ETag')
+@attr(assertion='fails 412')
+def test_copy_object_ifnonematch_good():
+    bucket = get_new_bucket()
+    key = bucket.new_key('foo')
+    key.set_contents_from_string('bar')
+
+    e = assert_raises(boto.exception.S3ResponseError, bucket.copy_key, 'bar', bucket.name, 'foo', headers={'x-amz-copy-source-if-none-match': key.etag})
+    eq(e.status, 412)
+    eq(e.reason, 'Precondition Failed')
+
+@attr(resource='object')
+@attr(method='copy')
+@attr(operation='copy w/ x-amz-copy-source-if-none-match: bogus ETag')
+@attr(assertion='succeeds')
+def test_copy_object_ifnonematch_failed():
+    bucket = get_new_bucket()
+    key = bucket.new_key('foo')
+    key.set_contents_from_string('bar')
+
+    new_key = bucket.copy_key('bar', bucket.name, 'foo', headers={'x-amz-copy-source-if-none-match': 'ABCORZ'})
+    got = new_key.get_contents_as_string()
+    eq(got, 'bar')
+
+@attr(resource='object')
 @attr(method='put')
 @attr(operation='data re-write w/ If-Match: the latest ETag')
 @attr(assertion='replaces previous data and metadata')
