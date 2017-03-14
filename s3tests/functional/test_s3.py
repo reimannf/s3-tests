@@ -1132,6 +1132,15 @@ def test_object_create_unreadable():
     key = bucket.new_key('\x0a')
     key.set_contents_from_string('bar')
 
+@attr(resource='object')
+@attr(method='head')
+@attr(operation='read to invalid key')
+@attr(assertion='fails 400')
+def test_object_read_unreadable():
+    bucket = get_new_bucket()
+    e = assert_raises(boto.exception.S3ResponseError, bucket.get_key, '\xae\x8a-')
+    eq(e.status, 400)
+    eq(e.reason, 'Bad Request')
 
 @attr(resource='object')
 @attr(method='post')
