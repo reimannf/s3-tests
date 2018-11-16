@@ -903,6 +903,7 @@ def test_bucket_list_return_data_versioning():
 @attr(method='get')
 @attr(operation='list keys after marker when bucket versioning is configured')
 @attr(assertion='marker list on versioning bucket')
+@attr('versioning')
 def test_bucket_list_marker_versioning():
     bucket = get_new_bucket()
     check_configure_versioning_retry(bucket, True, "Enabled")
@@ -5151,6 +5152,7 @@ def test_object_copy_key_not_found():
 @attr(method='put')
 @attr(operation='copy object to/from versioned bucket')
 @attr(assertion='works')
+@attr('versioning')
 def test_object_copy_versioned_bucket():
     bucket = get_new_bucket()
     check_configure_versioning_retry(bucket, True, "Enabled")
@@ -5201,6 +5203,7 @@ def test_object_copy_versioned_bucket():
 @attr(method='put')
 @attr(operation='test copy object of a multipart upload')
 @attr(assertion='successful')
+@attr('versioning')
 def test_object_copy_versioning_multipart_upload():
     bucket = get_new_bucket()
     check_configure_versioning_retry(bucket, True, "Enabled")
@@ -5493,6 +5496,7 @@ def test_multipart_copy_special_names():
 @attr(resource='object')
 @attr(method='put')
 @attr(operation='check multipart copies of versioned objects')
+@attr('versioning')
 def test_multipart_copy_versioned():
     src_bucket = get_new_bucket()
     dst_bucket = get_new_bucket()
@@ -5837,6 +5841,7 @@ def test_stress_bucket_acls_changes():
 @attr(method='put')
 @attr(operation='set cors')
 @attr(assertion='succeeds')
+@attr('cors')
 def test_set_cors():
     bucket = get_new_bucket()
     cfg = CORSConfiguration()
@@ -5880,6 +5885,7 @@ def _cors_request_and_check(func, url, headers, expect_status, expect_allow_orig
 @attr(method='get')
 @attr(operation='check cors response when origin header set')
 @attr(assertion='returning cors header')
+@attr('cors')
 def test_cors_origin_response():
     cfg = CORSConfiguration()
     bucket = get_new_bucket()
@@ -5947,6 +5953,7 @@ def test_cors_origin_response():
 @attr(method='get')
 @attr(operation='check cors response when origin is set to wildcard')
 @attr(assertion='returning cors header')
+@attr('cors')
 def test_cors_origin_wildcard():
     cfg = CORSConfiguration()
     bucket = get_new_bucket()
@@ -5972,6 +5979,7 @@ def test_cors_origin_wildcard():
 @attr(method='get')
 @attr(operation='check cors response when Access-Control-Request-Headers is set in option request')
 @attr(assertion='returning cors header')
+@attr('cors')
 def test_cors_header_option():
     cfg = CORSConfiguration()
     bucket = get_new_bucket()
@@ -9604,6 +9612,7 @@ def test_delete_tags_obj_public():
 @attr(method='put')
 @attr(operation='test whether a correct version-id returned')
 @attr(assertion='version-id is same as bucket list')
+@attr('versioning')
 def test_versioning_bucket_atomic_upload_return_version_id():
     # for versioning-enabled-bucket, an non-empty version-id should return
     bucket = get_new_bucket()
@@ -9635,6 +9644,7 @@ def test_versioning_bucket_atomic_upload_return_version_id():
 @attr(method='put')
 @attr(operation='test whether a correct version-id returned')
 @attr(assertion='version-id is same as bucket list')
+@attr('versioning')
 def test_versioning_bucket_multipart_upload_return_version_id():
     content_type='text/bla'
     objlen = 30 * 1024 * 1024
