@@ -1638,7 +1638,7 @@ def test_post_object_upload_larger_than_chunk():
 
 	utc = pytz.utc
 	expires = datetime.datetime.now(utc) + datetime.timedelta(seconds=+6000)
-	
+
 	policy_document = {"expiration": expires.strftime("%Y-%m-%dT%H:%M:%SZ"),\
 	"conditions": [\
 	{"bucket": bucket.name},\
@@ -5530,7 +5530,7 @@ def test_multipart_copy_invalid_range():
     valid_reason = ['Bad Request', 'Requested Range Not Satisfiable']
     if not e.reason in valid_reason:
        raise AssertionError("Invalid reason " + e.reason )
-    # no standard error code defined 
+    # no standard error code defined
     # eq(e.error_code, 'InvalidArgument')
 
 @attr(resource='object')
@@ -5706,7 +5706,7 @@ def test_multipart_upload_multiple_sizes():
 
     (upload, data) = _multipart_upload(bucket, key, 10 * 1024 * 1024 + 100 * 1024)
     upload.complete_upload()
- 
+
     (upload, data) = _multipart_upload(bucket, key, 10 * 1024 * 1024 + 600 * 1024)
     upload.complete_upload()
 
@@ -6010,9 +6010,80 @@ def _cors_request_and_check(func, url, headers, expect_status, expect_allow_orig
     eq(r.status_code, expect_status)
 
     assert r.headers.get('access-control-allow-origin', None) == expect_allow_origin
-    assert r.headers.get('access-control-allow-methods', None) == expect_allow_methods
+    if expect_allow_methods == None:
+        assert r.headers.get('access-control-allow-methods', None) == expect_allow_methods
+    else:
+        # S3 reposnds with a list of allowed methods if more than one is configured
+        assert expect_allow_methods in r.headers.get('access-control-allow-methods', None)
 
-    
+
+
+@attr(resource='bucket')
+@attr(method='get')
+@attr(operation='check cors response when origin header set')
+@attr(assertion='returning cors header')
+@attr('cors-simple')
+def test_cors_simple_origin_response():
+    bucket = get_new_bucket()
+    bucket.set_acl('public-read')
+
+    url = _get_post_url(s3.main, bucket)
+
+    _cors_request_and_check(requests.get, url, None, 200, None, None)
+    _cors_request_and_check(requests.get, url, {'Origin': 'foo.suffix'}, 200, 'foo.suffix', 'GET')
+    _cors_request_and_check(requests.get, url, {'Origin': 'foo.bar'}, 200, None, None)
+    _cors_request_and_check(requests.get, url, {'Origin': 'foo.suffix.get'}, 200, None, None)
+    _cors_request_and_check(requests.get, url, {'Origin': 'startend'}, 200, 'startend', 'GET')
+    _cors_request_and_check(requests.get, url, {'Origin': 'start1end'}, 200, 'start1end', 'GET')
+    _cors_request_and_check(requests.get, url, {'Origin': 'start12end'}, 200, 'start12end', 'GET')
+    _cors_request_and_check(requests.get, url, {'Origin': '0start12end'}, 200, None, None)
+    _cors_request_and_check(requests.get, url, {'Origin': 'prefix'}, 200, 'prefix', 'GET')
+    _cors_request_and_check(requests.get, url, {'Origin': 'prefix.suffix'}, 200, 'prefix.suffix', 'GET')
+    _cors_request_and_check(requests.get, url, {'Origin': 'bla.prefix'}, 200, None, None)
+
+    obj_url = '{u}/{o}'.format(u=url, o='bar')
+#    _cors_request_and_check(requests.get, obj_url, {'Origin': 'foo.suffix'}, 404, 'foo.suffix', 'GET')
+#    S3Proxy throws S3ErrorCode.NO_SUCH_KEY and does not expose any addtional headers in 404 case
+    _cors_request_and_check(requests.get, obj_url, {'Origin': 'foo.suffix'}, 404, None, None)
+#    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.suffix', 'Access-Control-Request-Method': 'GET',
+#                                                    'content-length': '0'}, 403, 'foo.suffix', 'GET')
+#   S3Proxy throws S3ErrorCode.ACCESS_DENIED for anonymous PUTs and does not expose any addtional headers
+    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.suffix', 'Access-Control-Request-Method': 'GET',
+                                                    'content-length': '0'}, 403, None, None)
+    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.suffix', 'Access-Control-Request-Method': 'PUT',
+                                                    'content-length': '0'}, 403, None, None)
+    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.suffix', 'Access-Control-Request-Method': 'DELETE',
+                                                    'content-length': '0'}, 403, None, None)
+    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.suffix', 'content-length': '0'}, 403, None, None)
+
+#    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.put', 'content-length': '0'}, 403, 'foo.put', 'PUT')
+#   S3Proxy throws S3ErrorCode.ACCESS_DENIED for anonymous PUTs and does not expose any addtional headers
+    _cors_request_and_check(requests.put, obj_url, {'Origin': 'foo.put', 'content-length': '0'}, 403, None, None)
+
+#    _cors_request_and_check(requests.get, obj_url, {'Origin': 'foo.suffix'}, 404, 'foo.suffix', 'GET')
+#    S3Proxy throws S3ErrorCode.NO_SUCH_KEY and does not expose any addtional headers in 404 case
+    _cors_request_and_check(requests.get, obj_url, {'Origin': 'foo.suffix'}, 404, None, None)
+
+    _cors_request_and_check(requests.options, url, None, 400, None, None)
+    _cors_request_and_check(requests.options, url, {'Origin': 'foo.suffix'}, 400, None, None)
+#    _cors_request_and_check(requests.options, url, {'Origin': 'bla'}, 400, None, None)
+#   Amamzon S3 responds with 403 if Origin is not allowed
+    _cors_request_and_check(requests.options, url, {'Origin': 'bla'}, 403, None, None)
+    _cors_request_and_check(requests.options, obj_url, {'Origin': 'foo.suffix', 'Access-Control-Request-Method': 'GET',
+                                                    'content-length': '0'}, 200, 'foo.suffix', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': 'foo.bar', 'Access-Control-Request-Method': 'GET'}, 403, None, None)
+    _cors_request_and_check(requests.options, url, {'Origin': 'foo.suffix.get', 'Access-Control-Request-Method': 'GET'}, 403, None, None)
+    _cors_request_and_check(requests.options, url, {'Origin': 'startend', 'Access-Control-Request-Method': 'GET'}, 200, 'startend', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': 'start1end', 'Access-Control-Request-Method': 'GET'}, 200, 'start1end', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': 'start12end', 'Access-Control-Request-Method': 'GET'}, 200, 'start12end', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': '0start12end', 'Access-Control-Request-Method': 'GET'}, 403, None, None)
+    _cors_request_and_check(requests.options, url, {'Origin': 'prefix', 'Access-Control-Request-Method': 'GET'}, 200, 'prefix', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': 'prefix.suffix', 'Access-Control-Request-Method': 'GET'}, 200, 'prefix.suffix', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': 'bla.prefix', 'Access-Control-Request-Method': 'GET'}, 403, None, None)
+#   _cors_request_and_check(requests.options, url, {'Origin': 'foo.put', 'Access-Control-Request-Method': 'GET'}, 403, None, None)
+#   S3Proxy cannot get configured with different GET / PUT rules
+    _cors_request_and_check(requests.options, url, {'Origin': 'foo.put', 'Access-Control-Request-Method': 'GET'}, 200, 'foo.put', 'GET')
+    _cors_request_and_check(requests.options, url, {'Origin': 'foo.put', 'Access-Control-Request-Method': 'PUT'}, 200, 'foo.put', 'PUT')
 
 @attr(resource='bucket')
 @attr(method='get')
@@ -6683,7 +6754,7 @@ def test_ranged_request_empty_object():
     e = assert_raises(boto.exception.S3ResponseError, key.open, 'r', headers={'Range': 'bytes=40-50'})
     eq(e.status, 416)
     eq(e.error_code, 'InvalidRange')
-    
+
 def check_can_test_multiregion():
     if not targets.main.master or len(targets.main.secondaries) == 0:
         raise SkipTest
@@ -6971,7 +7042,7 @@ def remove_obj_head(bucket, objname, k, c):
     print 'removing obj=', objname
     key = bucket.delete_key(objname)
 
-    k.append(key)    
+    k.append(key)
     c.append(None)
 
     eq(key.delete_marker, True)
@@ -8700,7 +8771,7 @@ def test_sse_kms_method_head():
     eq(res.status, 200)
     eq(res.getheader('x-amz-server-side-encryption'), 'aws:kms')
     eq(res.getheader('x-amz-server-side-encryption-aws-kms-key-id'), 'testkey-1')
-    
+
     res = _make_request('HEAD', bucket, key, authenticated=True, request_headers=sse_kms_client_headers)
     eq(res.status, 400)
 
@@ -8779,7 +8850,7 @@ def test_sse_kms_multipart_upload():
 
     eq(result.get('x-rgw-object-count', 1), 1)
     eq(result.get('x-rgw-bytes-used', 30 * 1024 * 1024), 30 * 1024 * 1024)
-    
+
     k = bucket.get_key(key)
     eq(k.metadata['foo'], 'bar')
     eq(k.content_type, content_type)
